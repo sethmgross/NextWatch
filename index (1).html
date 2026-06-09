@@ -54,7 +54,7 @@
     color: var(--accent);
     line-height: 1;
     display: inline-block;
-    border-bottom: 3px solid var(--accent2);
+    border-bottom: 3px solid var(--accent);
     padding-bottom: 3px;
   }
 
@@ -484,7 +484,10 @@ console.log("TMDB:", m.id);
 console.log("IMDB:", imdb_id);
       await sleep(120);
     
-      const omdb_score = await getImdbScore(imdb_id);
+      {
+  score: 7.4,
+  votes: 1821
+}
       await sleep(120);
       const tmdb_score  = getTMDBScore(m);
       const imdb_score  = omdb_score !== null ? omdb_score : tmdb_score;
@@ -502,7 +505,9 @@ const ratedMovies = enriched.filter(
 statusText.textContent =
   `${ratedMovies.length} rated movies · 6.0+ IMDb score · last 60 days · English only`;
 
-buildTabs(ratedMovies); catch(err) {
+buildTabs(ratedMovies);
+
+} catch(err) {
     console.error(err);
     panelsEl.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
     statusText.textContent = 'Error loading data.';
