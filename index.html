@@ -374,10 +374,15 @@ function renderCard(movie, rank) {
 }
 
 function renderGrid(movies) {
-  const scored = movies.filter(m => m.imdb_score !== null);
-  if (!scored.length) return `<div class="empty-msg">No rated movies found for this genre yet.</div>`;
-  const sorted = [...scored].sort((a,b) => b.imdb_score - a.imdb_score);
-  return `<div class="movie-grid">${sorted.map((m,i) => renderCard(m,i+1)).join('')}</div>`;
+  const sorted = [...movies].sort(
+    (a, b) => (b.imdb_score || 0) - (a.imdb_score || 0)
+  );
+
+  return `
+    <div class="movie-grid">
+      ${sorted.map((m, i) => renderCard(m, i + 1)).join('')}
+    </div>
+  `;
 }
 
 function buildTabs(movies) {
