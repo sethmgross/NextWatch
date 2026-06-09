@@ -238,21 +238,22 @@ async function init() {
     statusText.textContent = `Feed stabilized. ${curatedMovies.length} verified listings online.`;
     buildTabs(curatedMovies);
 
-  } catch (err) {
-    console.error(err);
-    // ... inside the catch block at the bottom of init()
-  } catch (err) {
-    console.error(err);
-    const statusText = document.getElementById('status-text');
-    const panelsEl = document.getElementById('panels');
-    if (statusText) statusText.textContent = 'System connection error.';
-    if (panelsEl) panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
+ } catch (err) {
+    console.error("Init Error:", err);
+    // Safe, deferred element lookup for errors
+    setTimeout(() => {
+      const statusText = document.getElementById('status-text');
+      const panelsEl = document.getElementById('panels');
+      if (statusText) statusText.textContent = 'System connection error.';
+      if (panelsEl) panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
+    }, 50);
   }
 }
 
-// Invoke instantly instead of waiting for the DOMContentLoaded event listener
-init();
+// The most bulletproof browser execution guard available
+window.onload = function() {
+  init();
+};
 </script>
 </body>
 </html>
-
