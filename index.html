@@ -1,0 +1,252 @@
+<script>
+const TMDB_KEY = '4104b0b6b863f9955c5af9330ef5ddeb';
+const OMDB_KEY = '31a2e0be';
+
+const GENRE_MAP = {
+  28:'Action',18:'Drama',35:'Comedy',27:'Horror',878:'Sci-Fi',
+  10749:'Romance',16:'Animation',80:'Crime',99:'Documentary',
+  14:'Fantasy',36:'History',10402:'Music',9648:'Mystery',
+  10752:'War',37:'Western',53:'Thriller',12:'Adventure',10751:'Family'
+};
+
+function dateStr(d) { return d.toISOString().split('T')[0]; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchTMDBPage(from, to, page) {
+  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}`
+    + `&primary_release_date.gte=${from}&primary_release_date.lte=${to}`
+    + `&with_original_language=en`
+    + `&sort_by=popularity.desc`
+    + `&page=${page}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`TMDB HTTP ${res.status}`);
+  return res.json();
+}
+
+async function fetchAllMovies() {
+  // Hardcoded to late 2025 to grab an established, highly-rated movie block
+  const from = "2025-10-01";
+  const to   = "2025-12-31";
+  
+  const first = await fetchTMDBPage(from, to, 1);
+  const totalPages = Math.min(first.total_pages || 1, 6);
+  const all = [...(first.results || [])];
+  
+  for (let p = 2; p <= totalPages; p++) {
+    await sleep(150);
+    const pg = await fetchTMDBPage(from, to, p);
+    all.push(...(pg.results || []));
+  }
+  
+  const seen = new Set();
+  return all.filter(m => {
+    if (seen.has(m.id)) return false;
+    seen.add(m.id);
+    return true;
+  }).slice(0, 40);
+}
+
+async function getOMDbScore(title, year) {
+  try {
+    const url = `https://www.omdbapi.com/?apikey=${OMDB_KEY}&t=${encodeURIComponent(title)}&y=${year}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.Response === "True" && data.imdbRating && data.imdbRating !== "N/A") {
+      return parseFloat(data.imdbRating);
+    }
+  } catch (e) {
+    console.error("OMDb error", e);
+  }
+  return null;
+}
+
+function getFallbackScore(m) {
+  if (m.vote_count >= 10 && m.vote_average) {
+    return parseFloat(m.vote_average.toFixed(1));
+  }
+  return null;
+}
+
+function buildTabs(movies) {
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+  
+  const categories = [
+    { id: 'all', name: 'All Movies', filter: () => true },
+    { id: 'top', name: 'Highly Rated (7.5+)', filter: m => (m.final_score || 0) >= 7.5 },
+    { id: 'action', name: 'Action & Sci-Fi', filter: m => m.genre_ids.some(g => g === 28 || g === 878) },
+    { id: 'drama', name: 'Drama', filter: m => m.genre_ids.some(g => g === 18) },
+    { id: 'comedy', name: 'Comedy', filter: m => m.genre_ids.some(g => g === 35) }
+  ];
+
+  tabsEl.innerHTML = '';
+  panelsEl.innerHTML = '';
+
+  categories.forEach((cat, idx) => {
+    const filtered = movies.filter(cat.filter);
+    if (filtered.length === 0 && cat.id !== 'all') return;
+
+    // Create Tab Button
+    const btn = document.createElement('button');
+    btn.className = `tab ${idx === 0 ? 'active' : ''}`;
+    btn.textContent = `${cat.name} (${filtered.length})`;
+    btn.onclick = () => switchTab(cat.id);
+    btn.setAttribute('data-tab', cat.id);
+    tabsEl.appendChild(btn);
+
+    // Create Panel Grid
+    const panel = document.createElement('div');
+    panel.id = `panel-${cat.id}`;
+    panel.className = `tab-panel ${idx === 0 ? 'active' : ''}`;
+    
+    if (filtered.length === 0) {
+      panel.innerHTML = `<div class="empty-msg">No qualifying movies found in this range.</div>`;
+    } else {
+      const grid = document.createElement('div');
+      grid.className = 'movie-grid';
+      
+      // Sort categories (except all) by highest score first
+      if (cat.id !== 'all') {
+        filtered.sort((a, b) => (b.final_score || 0) - (a.final_score || 0));
+      }
+
+      filtered.forEach((m, rank) => {
+        grid.appendChild(createMovieCard(m, rank + 1, cat.id === 'all'));
+      });
+      panel.appendChild(grid);
+    }
+    panelsEl.appendChild(panel);
+  });
+}
+
+function switchTab(catId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  
+  const targetTab = document.querySelector(`[data-tab="${catId}"]`);
+  const targetPanel = document.getElementById(`panel-${catId}`);
+  if (targetTab) targetTab.classList.add('active');
+  if (targetPanel) targetPanel.classList.add('active');
+}
+
+function createMovieCard(m, rank, showRank) {
+  const card = document.createElement('div');
+  card.className = 'movie-card';
+  card.setAttribute('data-movie-id', m.id);
+
+  const posterHtml = m.poster_path 
+    ? `<img src="https://image.tmdb.org/t/p/w342${m.poster_path}" alt="${m.title}" loading="lazy">`
+    : `<div class="no-poster"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>No Poster</span></div>`;
+
+  const genresHtml = m.genre_ids.slice(0, 2).map(id => 
+    `<span class="genre-tag">${GENRE_MAP[id] || 'Movie'}</span>`
+  ).join('');
+
+  card.innerHTML = `
+    ${showRank ? `<div class="rank-badge">#${rank}</div>` : ''}
+    <div class="poster-wrap">${posterHtml}</div>
+    <div class="score-bar-wrap">
+      <div class="score-bar" id="bar-${m.id}" style="width: 0%; background: var(--muted)"></div>
+    </div>
+    <div class="card-body">
+      <div class="card-title" title="${m.title}">${m.title}</div>
+      <div class="card-meta">
+        <div class="release-date">${m.release_date ? m.release_date.split('-')[0] : 'N/A'}</div>
+        <div class="score-wrap" id="score-box-${m.id}">
+          <div class="score none">--</div>
+          <div class="score-label">loading</div>
+        </div>
+      </div>
+      <div class="genre-tags">${genresHtml}</div>
+    </div>
+  `;
+  return card;
+}
+
+function updateCardScore(m) {
+  const scoreBoxes = document.querySelectorAll(`[data-movie-id="${m.id}"] #score-box-${m.id}`);
+  const scoreBars = document.querySelectorAll(`[data-movie-id="${m.id}"] #bar-${m.id}`);
+  
+  if (!m.final_score) {
+    scoreBoxes.forEach(box => {
+      box.innerHTML = `<div class="score none">N/A</div><div class="score-label">Unrated</div>`;
+    });
+    return;
+  }
+
+  const rating = m.final_score;
+  const pct = rating * 10;
+  let colorClass = 'low';
+  let colorHex = 'var(--low)';
+  
+  if (rating >= 7.2) { colorClass = 'high'; colorHex = 'var(--good)'; }
+  else if (rating >= 5.8) { colorClass = 'mid'; colorHex = 'var(--mid)'; }
+
+  scoreBoxes.forEach(box => {
+    box.innerHTML = `
+      <div class="score ${colorClass}">${rating.toFixed(1)}</div>
+      <div class="score-label">${m.score_source}</div>
+    `;
+  });
+
+  scoreBars.forEach(bar => {
+    bar.style.width = `${pct}%`;
+    bar.style.background = colorHex;
+  });
+}
+
+async function init() {
+  const statusText = document.getElementById('status-text');
+  const panelsEl = document.getElementById('panels');
+
+  try {
+    statusText.textContent = 'Scanning database streams...';
+    const rawMovies = await fetchAllMovies();
+    
+    if (rawMovies.length === 0) {
+      statusText.textContent = 'Scan complete. No titles captured.';
+      panelsEl.innerHTML = `<div class="empty-msg">No movies found for this period.</div>`;
+      return;
+    }
+
+    statusText.textContent = `Processing and assembling ${rawMovies.length} records...`;
+    
+    // Initial display baseline
+    buildTabs(rawMovies);
+
+    // Asynchronously resolve precise scores
+    for (let i = 0; i < rawMovies.length; i++) {
+      let m = rawMovies[i];
+      const year = m.release_date ? m.release_date.split('-')[0] : '';
+      
+      let score = await getOMDbScore(m.title, year);
+      if (score !== null) {
+        m.final_score = score;
+        m.score_source = 'imdb';
+      } else {
+        m.final_score = getFallbackScore(m);
+        m.score_source = 'tmdb';
+      }
+      
+      updateCardScore(m);
+      await sleep(100); // Throttled processing rhythm
+    }
+
+    // Filter out poorly rated filler context dynamically
+    const curatedMovies = rawMovies.filter(m => !m.final_score || m.final_score >= 6.0);
+    statusText.textContent = `Feed stabilized. ${curatedMovies.length} verified listings online.`;
+    buildTabs(curatedMovies);
+
+  } catch (err) {
+    console.error(err);
+    statusText.textContent = 'System connection error.';
+    panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
+  }
+}
+
+// Spark up execution pipeline
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
