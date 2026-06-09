@@ -316,7 +316,11 @@ async function fetchAllMovies() {
     all.push(...(pg.results || []));
   }
   const seen = new Set();
-  return all.filter(m => { if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+  return all.filter(m => {
+  if(seen.has(m.id)) return false;
+  seen.add(m.id);
+  return true;
+}).slice(0, 30);
 }
 
 function scoreClass(s) {
@@ -469,8 +473,12 @@ async function init() {
     for (let i = 0; i < movies.length; i++) {
       const m = movies[i];
       const imdb_id    = await getImdbId(m.id);
+      console.log("MOVIE:", m.title);
+console.log("TMDB:", m.id);
+console.log("IMDB:", imdb_id);
       await sleep(120);
       const omdb_score  = await getImdbScore(imdb_id);
+      const omdb_score = await getImdbScore(imdb_id);
       await sleep(120);
       const tmdb_score  = getTMDBScore(m);
       const imdb_score  = omdb_score !== null ? omdb_score : tmdb_score;
