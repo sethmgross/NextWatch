@@ -482,9 +482,6 @@ async function init() {
       await sleep(120);
       const omdb_score = await getImdbScore(imdb_id);
       console.log("SCORE:", omdb_score);
-      console.log("Total movies:", enriched.length);
-console.log("Rated movies:", ratedMovies.length);
-console.log(ratedMovies.slice(0, 10));
       await sleep(120);
       const tmdb_score  = getTMDBScore(m);
       const imdb_score  = omdb_score !== null ? omdb_score : tmdb_score;
