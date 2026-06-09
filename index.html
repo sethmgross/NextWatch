@@ -479,9 +479,6 @@ async function init() {
     for (let i = 0; i < movies.length; i++) {
       const m = movies[i];
       const imdb_id    = await getImdbId(m.id);
-      console.log("MOVIE:", m.title);
-console.log("TMDB:", m.id);
-console.log("IMDB:", imdb_id);
       await sleep(120);
       const omdb_score = await getImdbScore(imdb_id);
       console.log("SCORE:", omdb_score);
@@ -501,7 +498,9 @@ console.log(ratedMovies.slice(0, 10));
 const ratedMovies = enriched.filter(
   m => m.imdb_score !== null && m.imdb_score >= 6.0
 );
-
+console.log("Total movies:", enriched.length);
+console.log("Rated movies:", ratedMovies.length);
+console.log(ratedMovies.slice(0, 10));
 statusText.textContent =
   `${ratedMovies.length} rated movies · 6.0+ IMDb score · last 60 days · English only`;
 
