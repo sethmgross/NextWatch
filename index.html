@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seth's Next Watch</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #e8c840;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --good: #4cde8a;
+    --mid: #e8c840;
+    --low: #ff6b35;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  header {
+    background: rgba(10,10,15,0.97);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 48px 0;
+  }
+
+  .clown-logo { flex-shrink: 0; width: 88px; height: 108px; }
+
+  .tagline-block { display: flex; flex-direction: column; justify-content: center; }
+
+  .tagline-sub {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+
+  .tagline-main {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 3.4rem);
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    line-height: 1;
+    display: inline-block;
+    border-bottom: 3px solid var(--accent2);
+    padding-bottom: 3px;
+  }
+
+  .tabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0 48px;
+    margin-top: 12px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 10px 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { padding: 36px 48px; max-width: 1400px; margin: 0 auto; }
+
+  .status {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 28px; font-size: 0.76rem;
+    color: var(--muted); letter-spacing: 0.05em;
+  }
+  .status-dot { width:6px; height:6px; border-radius:50%; background:var(--good); animation:pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .movie-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(145px,1fr)); gap:16px; }
+
+  .movie-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .movie-card:hover { transform:translateY(-4px); border-color:var(--accent); box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .rank-badge {
+    position:absolute; top:10px; left:10px;
+    background:rgba(10,10,15,0.85); border:1px solid var(--border);
+    color:var(--muted); font-family:'Bebas Neue',sans-serif;
+    font-size:0.9rem; letter-spacing:0.06em;
+    padding:2px 8px; border-radius:3px; z-index:2;
+  }
+
+  .poster-wrap { width:100%; aspect-ratio:2/3; background:var(--surface2); overflow:hidden; }
+  .poster-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.3s; }
+  .movie-card:hover .poster-wrap img { transform:scale(1.04); }
+
+  .no-poster { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--muted); font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; }
+
+  .score-bar-wrap { height:3px; background:var(--surface2); }
+  .score-bar { height:3px; transition:width 0.6s ease; }
+
+  .card-body { padding:14px 16px 16px; }
+  .card-title { font-size:0.88rem; font-weight:500; line-height:1.3; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .card-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .release-date { font-size:0.72rem; color:var(--muted); }
+  .score { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.04em; line-height:1; }
+  .score.high { color:var(--good); }
+  .score.mid  { color:var(--mid); }
+  .score.low  { color:var(--low); }
+  .score.none { color:var(--muted); font-size:0.8rem; }
+  .score-label { font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; text-align:right; }
+  .score-wrap { text-align:right; }
+  .genre-tags { display:flex; flex-wrap:wrap; gap:4px; }
+  .genre-tag { font-size:0.62rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--border); padding:2px 7px; border-radius:2px; }
+
+  .loading-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; min-height:300px; color:var(--muted); font-size:0.8rem; letter-spacing:0.1em; text-transform:uppercase; }
+  .film-strip { display:flex; gap:4px; }
+  .film-strip span { width:8px; height:24px; background:var(--border); border-radius:1px; animation:filmLoad 1s ease-in-out infinite; }
+  .film-strip span:nth-child(2){animation-delay:0.1s}
+  .film-strip span:nth-child(3){animation-delay:0.2s}
+  .film-strip span:nth-child(4){animation-delay:0.3s}
+  .film-strip span:nth-child(5){animation-delay:0.4s}
+  .film-strip span:nth-child(6){animation-delay:0.5s}
+  @keyframes filmLoad { 0%,100%{background:var(--border);transform:scaleY(1)} 50%{background:var(--accent);transform:scaleY(1.5)} }
+
+  .error-msg { color:var(--low); font-size:0.85rem; padding:20px; border:1px solid var(--low); border-radius:4px; background:rgba(255,107,53,0.05); }
+  .empty-msg { color:var(--muted); font-size:0.85rem; padding:60px 20px; text-align:center; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  @media (max-width:600px) {
+    .header-top { padding:12px 20px 0; gap:14px; }
+    .clown-logo { width:60px; height:74px; }
+    .tabs { padding:0 20px; }
+    main { padding:24px 20px; }
+    .movie-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <svg class="clown-logo" viewBox="0 0 200 245" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="100,4 68,90 132,90" fill="#e63946"/>
+      <ellipse cx="100" cy="90" rx="38" ry="9" fill="#ff6b9d"/>
+      <circle cx="88" cy="42" r="5" fill="#ffd166"/>
+      <circle cx="108" cy="58" r="4" fill="#06d6a0"/>
+      <circle cx="94" cy="66" r="3" fill="#ffffff" opacity="0.8"/>
+      <line x1="100" y1="4" x2="100" y2="0" stroke="#ffd166" stroke-width="1.5"/>
+      <circle cx="100" cy="0" r="3" fill="#ffd166"/>
+      <circle cx="67" cy="96" r="10" fill="#ff9f1c"/>
+      <circle cx="76" cy="104" r="9" fill="#ff9f1c"/>
+      <circle cx="133" cy="96" r="10" fill="#ff9f1c"/>
+      <circle cx="124" cy="104" r="9" fill="#ff9f1c"/>
+      <ellipse cx="100" cy="128" rx="38" ry="40" fill="#ffe8a1" stroke="#f4a522" stroke-width="1"/>
+      <ellipse cx="84" cy="120" rx="7" ry="8" fill="white" stroke="#333" stroke-width="0.8"/>
+      <circle cx="85" cy="121" r="4" fill="#3a86ff"/>
+      <circle cx="86" cy="120" r="2" fill="#1a1a2e"/>
+      <circle cx="87" cy="119" r="1" fill="white"/>
+      <ellipse cx="116" cy="120" rx="7" ry="8" fill="white" stroke="#333" stroke-width="0.8"/>
+      <circle cx="117" cy="121" r="4" fill="#3a86ff"/>
+      <circle cx="118" cy="120" r="2" fill="#1a1a2e"/>
+      <circle cx="119" cy="119" r="1" fill="white"/>
+      <path d="M78,112 Q84,107 90,112" fill="none" stroke="#7b4f00" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M110,112 Q116,107 122,112" fill="none" stroke="#7b4f00" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse cx="100" cy="133" rx="7" ry="6" fill="#e63946"/>
+      <ellipse cx="72" cy="138" rx="10" ry="6" fill="#ffb3c6" opacity="0.5"/>
+      <ellipse cx="128" cy="138" rx="10" ry="6" fill="#ffb3c6" opacity="0.5"/>
+      <path d="M80,146 Q100,164 120,146" fill="#c1121f"/>
+      <path d="M80,146 Q100,154 120,146" fill="#ff8fa3"/>
+      <rect x="87" y="146" width="7" height="5" rx="1" fill="white"/>
+      <rect x="96" y="146" width="7" height="5" rx="1" fill="white"/>
+      <rect x="106" y="146" width="6" height="5" rx="1" fill="white"/>
+      <ellipse cx="100" cy="174" rx="30" ry="10" fill="#06d6a0"/>
+      <path d="M72,174 Q80,167 88,174 Q96,167 104,174 Q112,167 120,174 Q128,167 133,174" fill="none" stroke="#05a880" stroke-width="1.2"/>
+      <rect x="76" y="180" width="48" height="68" rx="8" fill="#3a86ff"/>
+      <circle cx="100" cy="196" r="3.5" fill="#ffd166"/>
+      <circle cx="100" cy="210" r="3.5" fill="#ffd166"/>
+      <circle cx="100" cy="224" r="3.5" fill="#ffd166"/>
+      <ellipse cx="100" cy="248" rx="30" ry="9" fill="#ff6b9d"/>
+      <rect x="84" y="254" width="12" height="48" rx="4" fill="#3a86ff"/>
+      <rect x="104" y="254" width="12" height="48" rx="4" fill="#3a86ff"/>
+      <ellipse cx="90" cy="303" rx="14" ry="6" fill="#e63946"/>
+      <path d="M78,306 Q66,310 64,318 Q62,328 72,329 Q82,330 84,320" fill="#e63946"/>
+      <path d="M72,329 Q63,333 66,325" fill="none" stroke="#c1121f" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="110" cy="303" rx="14" ry="6" fill="#e63946"/>
+      <path d="M122,306 Q134,310 136,318 Q138,328 128,329 Q118,330 116,320" fill="#e63946"/>
+      <path d="M128,329 Q137,333 134,325" fill="none" stroke="#c1121f" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M78,198 Q50,210 20,202" fill="none" stroke="#ffe8a1" stroke-width="12" stroke-linecap="round"/>
+      <ellipse cx="18" cy="202" rx="9" ry="7" fill="#06d6a0" transform="rotate(-10,18,202)"/>
+      <path d="M122,198 Q150,210 180,202" fill="none" stroke="#ffe8a1" stroke-width="12" stroke-linecap="round"/>
+      <ellipse cx="182" cy="202" rx="9" ry="7" fill="#06d6a0" transform="rotate(10,182,202)"/>
+      <g transform="rotate(-12,10,215)">
+        <rect x="-18" y="208" width="48" height="38" rx="3" fill="#1a1a2e" stroke="#ffd166" stroke-width="1.5"/>
+        <rect x="-18" y="208" width="48" height="11" rx="3" fill="#ffd166"/>
+        <clipPath id="ca"><rect x="-18" y="208" width="48" height="11" rx="3"/></clipPath>
+        <line x1="-18" y1="208" x2="-8" y2="219" stroke="#1a1a2e" stroke-width="4" clip-path="url(#ca)"/>
+        <line x1="-5" y1="208" x2="5" y2="219" stroke="#1a1a2e" stroke-width="4" clip-path="url(#ca)"/>
+        <line x1="8" y1="208" x2="18" y2="219" stroke="#1a1a2e" stroke-width="4" clip-path="url(#ca)"/>
+        <line x1="-12" y1="226" x2="24" y2="226" stroke="#ffd166" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="-12" y1="233" x2="20" y2="233" stroke="#ffffff" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+        <line x1="-12" y1="239" x2="22" y2="239" stroke="#ffffff" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+      </g>
+      <g transform="rotate(12,190,215)">
+        <rect x="170" y="208" width="48" height="38" rx="3" fill="#1a1a2e" stroke="#e63946" stroke-width="1.5"/>
+        <rect x="170" y="208" width="48" height="11" rx="3" fill="#e63946"/>
+        <clipPath id="cb"><rect x="170" y="208" width="48" height="11" rx="3"/></clipPath>
+        <line x1="170" y1="208" x2="180" y2="219" stroke="#1a1a2e" stroke-width="4" clip-path="url(#cb)"/>
+        <line x1="183" y1="208" x2="193" y2="219" stroke="#1a1a2e" stroke-width="4" clip-path="url(#cb)"/>
+        <line x1="196" y1="208" x2="206" y2="219" stroke="#1a1a2e" stroke-width="4" clip-path="url(#cb)"/>
+        <line x1="176" y1="226" x2="212" y2="226" stroke="#ffd166" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="176" y1="233" x2="208" y2="233" stroke="#ffffff" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+        <line x1="176" y1="239" x2="210" y2="239" stroke="#ffffff" stroke-width="1" opacity="0.5" stroke-linecap="round"/>
+      </g>
+    </svg>
+
+    <div class="tagline-block">
+      <div class="tagline-sub">Quit clowning around and find your next movie at</div>
+      <div class="tagline-main">NEXT WATCH</div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<main>
+  <div class="status">
+    <div class="status-dot"></div>
+    <span id="status-text">Fetching movies…</span>
+  </div>
+  <div id="panels"></div>
+</main>
+
+<script>
+const TMDB_KEY = '4104b0b6b863f9955c5af9330ef5ddeb';
+const OMDB_KEY = '31a2e0be';
+
+const GENRE_MAP = {
+  28:'Action',18:'Drama',35:'Comedy',27:'Horror',878:'Sci-Fi',
+  10749:'Romance',16:'Animation',80:'Crime',99:'Documentary',
+  14:'Fantasy',36:'History',10402:'Music',9648:'Mystery',
+  10752:'War',37:'Western',53:'Thriller',12:'Adventure',10751:'Family'
+};
+
+function dateStr(d) { return d.toISOString().split('T')[0]; }
+function pastDate(days) { const d = new Date(); d.setDate(d.getDate()-days); return d; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchTMDBPage(from, to, page) {
+  const url = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}`
+    + `&primary_release_date.gte=${from}&primary_release_date.lte=${to}`
+    + `&with_original_language=en`
+    + `&sort_by=primary_release_date.desc&page=${page}&vote_count.gte=0`;
+  const r = await fetch(url);
+  return r.json();
+}
+
+async function getImdbId(tmdbId) {
+  try {
+    const r = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/external_ids?api_key=${TMDB_KEY}`);
+    const d = await r.json();
+    return d.imdb_id || null;
+  } catch { return null; }
+}
+
+async function getImdbScore(imdbId) {
+  if (!imdbId) return null;
+  try {
+    const r = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_KEY}`);
+    const d = await r.json();
+    return (d.imdbRating && d.imdbRating !== 'N/A') ? parseFloat(d.imdbRating) : null;
+  } catch { return null; }
+}
+
+async function fetchAllMovies() {
+  const to   = dateStr(new Date());
+  const from = dateStr(pastDate(60));
+  const first = await fetchTMDBPage(from, to, 1);
+  const totalPages = Math.min(first.total_pages || 1, 8);
+  const all = [...(first.results || [])];
+  for (let p = 2; p <= totalPages; p++) {
+    await sleep(200);
+    const pg = await fetchTMDBPage(from, to, p);
+    all.push(...(pg.results || []));
+  }
+  const seen = new Set();
+  return all.filter(m => { if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+}
+
+function scoreClass(s) {
+  if (s === null) return 'none';
+  if (s >= 7) return 'high';
+  if (s >= 5) return 'mid';
+  return 'low';
+}
+function scoreBarColor(s) {
+  if (s === null) return 'var(--border)';
+  if (s >= 7) return 'var(--good)';
+  if (s >= 5) return 'var(--mid)';
+  return 'var(--low)';
+}
+
+function renderCard(movie, rank) {
+  const poster = movie.poster_path
+    ? `<img src="https://image.tmdb.org/t/p/w342${movie.poster_path}" alt="${movie.title}" loading="lazy">`
+    : `<div class="no-poster"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>No Poster</div>`;
+
+  const score = movie.imdb_score;
+  const scoreDisp = score !== null ? score.toFixed(1) : 'N/A';
+  const cls = scoreClass(score);
+  const barW = score !== null ? (score/10*100).toFixed(1) : '0';
+
+  const genres = (movie.genre_ids||[]).slice(0,3)
+    .map(id => GENRE_MAP[id]||'').filter(Boolean)
+    .map(g => `<span class="genre-tag">${g}</span>`).join('');
+
+  const releaseDate = movie.release_date
+    ? new Date(movie.release_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+    : '';
+
+  const click = movie.imdb_id
+    ? `onclick="window.open('https://www.imdb.com/title/${movie.imdb_id}','_blank')"`
+    : '';
+
+  return `<div class="movie-card" ${click} data-id="${movie.id}" style="animation-delay:${Math.min(rank*0.03,0.5)}s">
+    <span class="rank-badge">#${rank}</span>
+    <div class="poster-wrap">${poster}</div>
+    <div class="score-bar-wrap"><div class="score-bar" style="width:${barW}%;background:${scoreBarColor(score)}"></div></div>
+    <div class="card-body">
+      <div class="card-title">${movie.title}</div>
+      <div class="card-meta">
+        <span class="release-date">${releaseDate}</span>
+        <div class="score-wrap">
+          <div class="score ${cls}">${scoreDisp}</div>
+          <div class="score-label">IMDb</div>
+        </div>
+      </div>
+      <div class="genre-tags">${genres}</div>
+    </div>
+  </div>`;
+}
+
+function renderGrid(movies) {
+  const scored = movies.filter(m => m.imdb_score !== null);
+  if (!scored.length) return `<div class="empty-msg">No rated movies found for this genre yet.</div>`;
+  const sorted = [...scored].sort((a,b) => b.imdb_score - a.imdb_score);
+  return `<div class="movie-grid">${sorted.map((m,i) => renderCard(m,i+1)).join('')}</div>`;
+}
+
+function buildTabs(movies) {
+  const tabsEl   = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+  tabsEl.innerHTML = '';
+  panelsEl.innerHTML = '';
+
+  const genreIds = new Set();
+  movies.forEach(m => (m.genre_ids||[]).forEach(id => genreIds.add(id)));
+  const genres = [...genreIds]
+    .map(id => ({id, name:GENRE_MAP[id]}))
+    .filter(g => g.name)
+    .sort((a,b) => a.name.localeCompare(b.name));
+
+  const allTabs = [{id:'all',name:'All Movies'}, ...genres.map(g => ({id:`g${g.id}`,name:g.name,gid:g.id}))];
+
+  allTabs.forEach((t, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (idx===0 ? ' active' : '');
+    btn.textContent = t.name;
+    btn.dataset.tab = t.id;
+    btn.addEventListener('click', () => switchTab(t.id));
+    tabsEl.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel' + (idx===0 ? ' active' : '');
+    panel.id = `panel-${t.id}`;
+    panel.innerHTML = t.id==='all'
+      ? renderGrid(movies)
+      : renderGrid(movies.filter(m => (m.genre_ids||[]).includes(t.gid)));
+    panelsEl.appendChild(panel);
+  });
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id===`panel-${id}`));
+}
+
+// Update a single card's score in place across all tab panels
+function updateCardScore(movie) {
+  document.querySelectorAll(`[data-id="${movie.id}"]`).forEach(card => {
+    const score = movie.imdb_score;
+    const scoreEl = card.querySelector('.score');
+    const barEl   = card.querySelector('.score-bar');
+    const cls     = scoreClass(score);
+    if (scoreEl) {
+      scoreEl.textContent = score !== null ? score.toFixed(1) : 'N/A';
+      scoreEl.className   = `score ${cls}`;
+    }
+    if (barEl) {
+      barEl.style.width      = score !== null ? (score/10*100).toFixed(1)+'%' : '0%';
+      barEl.style.background = scoreBarColor(score);
+    }
+    if (movie.imdb_id) {
+      card.setAttribute('onclick', `window.open('https://www.imdb.com/title/${movie.imdb_id}','_blank')`);
+    }
+  });
+}
+
+async function init() {
+  const statusText = document.getElementById('status-text');
+  const panelsEl   = document.getElementById('panels');
+
+  panelsEl.innerHTML = `<div class="loading-screen">
+    <div class="film-strip"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <span id="load-msg">Loading recent releases…</span>
+  </div>`;
+
+  try {
+    statusText.textContent = 'Fetching recent English-language releases…';
+    const movies = await fetchAllMovies();
+    statusText.textContent = `Found ${movies.length} movies — fetching IMDb scores…`;
+
+    // Render all cards immediately with placeholder scores
+    const withPlaceholders = movies.map(m => ({...m, imdb_id:null, imdb_score:null}));
+    buildTabs(withPlaceholders);
+
+    // Enrich one movie at a time, updating cards live as scores arrive
+    const enriched = [...withPlaceholders];
+    for (let i = 0; i < movies.length; i++) {
+      const m = movies[i];
+      const imdb_id = await getImdbId(m.id);
+      await sleep(120);
+      const imdb_score = await getImdbScore(imdb_id);
+      await sleep(120);
+      enriched[i] = {...m, imdb_id, imdb_score};
+      updateCardScore(enriched[i]);
+      statusText.textContent = `Fetching IMDb scores… ${i+1} / ${movies.length}`;
+    }
+
+    // Final re-sort and rebuild tabs with correct ranking
+    const hasScore = enriched.filter(m => m.imdb_score !== null).length;
+    statusText.textContent = `${enriched.length} movies · ${hasScore} with IMDb scores · last 60 days · English only`;
+    buildTabs(enriched);
+
+  } catch(err) {
+    console.error(err);
+    panelsEl.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
+    statusText.textContent = 'Error loading data.';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
