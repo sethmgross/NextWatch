@@ -483,7 +483,7 @@ async function init() {
 console.log("TMDB:", m.id);
 console.log("IMDB:", imdb_id);
       await sleep(120);
-      const omdb_score  = await getImdbScore(imdb_id);
+    
       const omdb_score = await getImdbScore(imdb_id);
       await sleep(120);
       const tmdb_score  = getTMDBScore(m);
