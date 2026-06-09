@@ -240,13 +240,21 @@ async function init() {
 
   } catch (err) {
     console.error(err);
-    statusText.textContent = 'System connection error.';
-    panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
+    // ... inside the catch block at the bottom of init()
+  } catch (err) {
+    console.error(err);
+    const statusText = document.getElementById('status-text');
+    const panelsEl = document.getElementById('panels');
+    if (statusText) statusText.textContent = 'System connection error.';
+    if (panelsEl) panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
   }
 }
 
-// Spark up execution pipeline
-document.addEventListener('DOMContentLoaded', init);
+// Invoke instantly instead of waiting for the DOMContentLoaded event listener
+init();
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
