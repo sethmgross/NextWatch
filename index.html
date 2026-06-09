@@ -495,9 +495,9 @@ async function init() {
 const ratedMovies = enriched.filter(
   m => m.imdb_score !== null && m.imdb_score >= 6.0
 );
-console.log("Total movies:", enriched.length);
-console.log("Rated movies:", ratedMovies.length);
-console.log(ratedMovies.slice(0, 10));
+// console.log("Total movies:", enriched.length);
+// console.log("Rated movies:", ratedMovies.length);
+// console.log(ratedMovies.slice(0, 10));
 statusText.textContent =
   `${ratedMovies.length} rated movies · 6.0+ IMDb score · last 60 days · English only`;
 
