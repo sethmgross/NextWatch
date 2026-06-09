@@ -201,16 +201,16 @@ async function init() {
   const panelsEl = document.getElementById('panels');
 
   try {
-    statusText.textContent = 'Scanning database streams...';
+    if (statusText) statusText.textContent = 'Scanning database streams...';
     const rawMovies = await fetchAllMovies();
     
     if (rawMovies.length === 0) {
-      statusText.textContent = 'Scan complete. No titles captured.';
-      panelsEl.innerHTML = `<div class="empty-msg">No movies found for this period.</div>`;
+      if (statusText) statusText.textContent = 'Scan complete. No titles captured.';
+      if (panelsEl) panelsEl.innerHTML = `<div class="empty-msg">No movies found for this period.</div>`;
       return;
     }
 
-    statusText.textContent = `Processing and assembling ${rawMovies.length} records...`;
+    if (statusText) statusText.textContent = `Processing and assembling ${rawMovies.length} records...`;
     
     // Initial display baseline
     buildTabs(rawMovies);
@@ -235,22 +235,17 @@ async function init() {
 
     // Filter out poorly rated filler context dynamically
     const curatedMovies = rawMovies.filter(m => !m.final_score || m.final_score >= 6.0);
-    statusText.textContent = `Feed stabilized. ${curatedMovies.length} verified listings online.`;
+    if (statusText) statusText.textContent = `Feed stabilized. ${curatedMovies.length} verified listings online.`;
     buildTabs(curatedMovies);
 
- } catch (err) {
+  } catch (err) {
     console.error("Init Error:", err);
-    // Safe, deferred element lookup for errors
-    setTimeout(() => {
-      const statusText = document.getElementById('status-text');
-      const panelsEl = document.getElementById('panels');
-      if (statusText) statusText.textContent = 'System connection error.';
-      if (panelsEl) panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
-    }, 50);
+    if (statusText) statusText.textContent = 'System connection error.';
+    if (panelsEl) panelsEl.innerHTML = `<div class="error-msg">Fatal Stream Interruption: ${err.message}</div>`;
   }
 }
 
-// The most bulletproof browser execution guard available
+// Safely boot up the execution pipeline once the window is completely ready
 window.onload = function() {
   init();
 };
