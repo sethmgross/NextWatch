@@ -378,9 +378,15 @@ function renderCard(movie, rank) {
 }
 
 function renderGrid(movies) {
-  const sorted = [...movies].sort(
-    (a, b) => (b.imdb_score || 0) - (a.imdb_score || 0)
+  const rated = movies.filter(m => m.imdb_score !== null);
+
+  const sorted = [...rated].sort(
+    (a, b) => b.imdb_score - a.imdb_score
   );
+
+  if (!sorted.length) {
+    return `<div class="empty-msg">No rated movies found.</div>`;
+  }
 
   return `
     <div class="movie-grid">
@@ -488,12 +494,15 @@ console.log("IMDB:", imdb_id);
       statusText.textContent = `Fetching IMDb scores… ${i+1} / ${movies.length}`;
     }
 
-    // Final re-sort and rebuild tabs with correct ranking
-    const hasScore = enriched.filter(m => m.imdb_score !== null).length;
-    statusText.textContent = `${enriched.length} movies · ${hasScore} with IMDb scores · last 60 days · English only`;
-    buildTabs(enriched);
+   // Keep only movies with a score of 6.0 or higher
+const ratedMovies = enriched.filter(
+  m => m.imdb_score !== null && m.imdb_score >= 6.0
+);
 
-  } catch(err) {
+statusText.textContent =
+  `${ratedMovies.length} rated movies · 6.0+ IMDb score · last 60 days · English only`;
+
+buildTabs(ratedMovies); catch(err) {
     console.error(err);
     panelsEl.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
     statusText.textContent = 'Error loading data.';
