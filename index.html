@@ -295,6 +295,7 @@ async function getImdbScore(imdbId) {
   if (!imdbId) return null;
   try {
     const r = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_KEY}`);
+    console.log("OMDB RAW:", data);
     const d = await r.json();
     return (d.imdbRating && d.imdbRating !== 'N/A') ? parseFloat(d.imdbRating) : null;
   } catch { return null; }
@@ -481,7 +482,12 @@ async function init() {
       const imdb_id    = await getImdbId(m.id);
       await sleep(120);
       const omdb_score = await getImdbScore(imdb_id);
-      console.log("SCORE:", omdb_score);
+     console.log({
+  title: movie.title,
+  imdb_id: movie.imdb_id,
+  omdbResponse: omdbData,
+  score: score
+});
       await sleep(120);
       const tmdb_score  = getTMDBScore(m);
       const imdb_score  = omdb_score !== null ? omdb_score : tmdb_score;
